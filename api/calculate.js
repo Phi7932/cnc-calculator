@@ -1,6 +1,4 @@
 export default function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
-    
     try {
         const { mode, params, machine } = JSON.parse(req.body);
         let result = { gcode: "", coords: [], path: [], radius: 0 };
@@ -18,21 +16,12 @@ export default function handler(req, res) {
                 });
             }
             result.radius = r;
-            result.gcode = `(TOOL - DRILL)\nG90 G54 G0 X0 Y0\n` + 
-                result.coords.map(c => `X${c.x} Y${c.y} Z2.0\nG81 Z-${params.depth} R2.0 F100`).join('\n') + "\nG80 M30";
-        } 
-        else if (mode === 'milling') {
-            // Logic Hexagon
-            const r = params.hexFlat / Math.sqrt(3);
-            for (let i = 0; i <= 6; i++) {
-                const angle = (i * 60 + params.rotation) * Math.PI / 180;
-                result.path.push({ x: (r * Math.cos(angle)).toFixed(3), y: (r * Math.sin(angle)).toFixed(3) });
-            }
-            result.gcode = "(HEX MILLING G-CODE)\n..."; 
+            result.gcode = `(G-CODE BY SERVER)\n` + result.coords.map(c => `X${c.x} Y${c.y}`).join('\n');
         }
+        // Thêm các mode Hexagon tương tự vào đây...
 
         res.status(200).json(result);
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        res.status(500).json({ error: "Server Error" });
     }
 }
