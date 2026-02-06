@@ -1,37 +1,57 @@
-async function calculate() {
-    // Thu thập dữ liệu từ các ô nhập
-    const payload = {
-        mode: selectedMode,
-        machine: selectedMachine,
-        params: {
-            pcd: parseFloat(document.getElementById('pcd')?.value || 0),
-            holes: parseInt(document.getElementById('holes')?.value || 0),
-            rotation: parseFloat(document.getElementById('rotation')?.value || 0),
-            depth: parseFloat(document.getElementById('depth')?.value || 0),
-            hexFlat: parseFloat(document.getElementById('hexFlat')?.value || 0),
-            toolDia: parseFloat(document.getElementById('toolDia')?.value || 10)
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNC G-Code Generator PRO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #00ff88; --secondary: #0088ff; --bg-dark: #0a0e1a; --bg-darker: #050810; --text-primary: #e0e6f0; }
+        body { font-family: 'Roboto Mono', monospace; background: var(--bg-darker); color: var(--text-primary); }
+        /* ... (Copy toàn bộ phần <style> từ file cũ của mày dán vào đây) ... */
+    </style>
+</head>
+<body>
+    <div id="statusMessage" class="status-message"></div>
+    <script>
+        // HÀM GỌI API BẢO MẬT - THAY THẾ CHO HÀM CALCULATE CŨ
+        async function calculate() {
+            const status = document.getElementById('statusMessage');
+            if (status) status.textContent = 'Serverless Processing...';
+
+            const payload = {
+                mode: selectedMode,
+                machine: selectedMachine,
+                params: {
+                    pcd: parseFloat(document.getElementById('pcd')?.value || 0),
+                    holes: parseInt(document.getElementById('holes')?.value || 0),
+                    rotation: parseFloat(document.getElementById('rotation')?.value || 0),
+                    depth: parseFloat(document.getElementById('depth')?.value || 0),
+                    hexFlat: parseFloat(document.getElementById('hexFlat')?.value || 0),
+                    circularPCD: parseFloat(document.getElementById('circularPCD')?.value || 0)
+                }
+            };
+
+            try {
+                const response = await fetch('/api/calculate', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                // Hiển thị kết quả từ Server trả về
+                document.getElementById('gcodeOutput').textContent = result.gcode;
+                
+                // Vẽ lại Canvas bằng dữ liệu tọa độ từ Server
+                if (selectedMode === 'drilling') {
+                    drawDrillingVisualization(result.radius, result.coords);
+                } else {
+                    drawMillingVisualization(result.path);
+                }
+            } catch (error) {
+                console.error("Lỗi:", error);
+            }
         }
-    };
-
-    try {
-        const response = await fetch('/api/calculate', {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
-
-        const result = await response.json();
-
-        // Hiển thị G-Code từ Server gửi về
-        currentGCode = result.gcode;
-        document.getElementById('gcodeOutput').textContent = currentGCode;
-
-        // Vẽ Canvas dựa trên tọa độ Server gửi về
-        if (selectedMode === 'drilling') {
-            drawDrillingVisualization(result.radius, result.coords);
-        } else {
-            drawMillingVisualization(result.path);
-        }
-    } catch (error) {
-        console.error("Lỗi kết nối server bí mật!");
-    }
-}
+    </script>
+</body>
+</html>
