@@ -1,0 +1,37 @@
+async function calculate() {
+    // Thu thập dữ liệu từ các ô nhập
+    const payload = {
+        mode: selectedMode,
+        machine: selectedMachine,
+        params: {
+            pcd: parseFloat(document.getElementById('pcd')?.value || 0),
+            holes: parseInt(document.getElementById('holes')?.value || 0),
+            rotation: parseFloat(document.getElementById('rotation')?.value || 0),
+            depth: parseFloat(document.getElementById('depth')?.value || 0),
+            hexFlat: parseFloat(document.getElementById('hexFlat')?.value || 0),
+            toolDia: parseFloat(document.getElementById('toolDia')?.value || 10)
+        }
+    };
+
+    try {
+        const response = await fetch('/api/calculate', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        // Hiển thị G-Code từ Server gửi về
+        currentGCode = result.gcode;
+        document.getElementById('gcodeOutput').textContent = currentGCode;
+
+        // Vẽ Canvas dựa trên tọa độ Server gửi về
+        if (selectedMode === 'drilling') {
+            drawDrillingVisualization(result.radius, result.coords);
+        } else {
+            drawMillingVisualization(result.path);
+        }
+    } catch (error) {
+        console.error("Lỗi kết nối server bí mật!");
+    }
+}
